@@ -38,6 +38,7 @@ def create_compute_environment(
     if "Role" not in IAM_CLIENT.get_role(RoleName=service_role.split("/")[-1]):
         raise ValueError(f"Service role {service_role} does not exist.")
 
+    # create the compute environment
     BATCH_CLIENT.create_compute_environment(
         computeEnvironmentName=name,
         type="MANAGED",
@@ -51,6 +52,7 @@ def create_compute_environment(
             "tags": tags,
         },
     )
+    print(f"Compute environment {name} created.")
 
 
 def list_compute_environments():
@@ -117,3 +119,4 @@ def delete_compute_environment(name: str):
         The name or ARN of the compute environment to delete
     """
     BATCH_CLIENT.delete_compute_environment(computeEnvironment=name)
+    print(f"Compute environment {name} deleted.")
