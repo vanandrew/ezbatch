@@ -7,6 +7,9 @@ license = { file = "LICENSE" }
 dynamic = ["version"]
 dependencies = [
     "boto3",
+    "dataclasses-json",
+    "pandas",
+    "tabulate",
     "toml",
 ]
 
@@ -15,13 +18,16 @@ ezbatch-cli = "ezbatch.scripts.cli:ezbatch_cli"
 
 [project.optional-dependencies]
 dev = [
-    "boto3-stubs[essential,batch]",
+    "boto3-stubs[essential,batch,iam]",
     "pre-commit",
 ]
 
 [build-system]
 requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 120
 
 [tool.setuptools_scm]
 version_file = "ezbatch/_version.py"
