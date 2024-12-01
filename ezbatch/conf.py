@@ -1,11 +1,18 @@
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from dataclasses_json import DataClassJsonMixin
 from toml import dump, load
 
-from ezbatch.defaults import CURRENT_AWS_ACCOUNT, DEFAULT_CONFIG_PATH, DEFAULT_MAX_VCPUS
+from ezbatch.defaults import (
+    CURRENT_AWS_ACCOUNT,
+    DEFAULT_CONFIG_PATH,
+    DEFAULT_MAX_VCPUS,
+    DEFAULT_SSE,
+    DEFAULT_SSE_KMS_KEY_ID,
+)
 
 
 @dataclass
@@ -34,6 +41,8 @@ class EZBatchSettings(DataClassJsonMixin):
         f"arn:aws:iam::{CURRENT_AWS_ACCOUNT}:role/aws-service-role/batch.amazonaws.com/AWSServiceRoleForBatch"
     )
     securityGroupIds: list[str] = field(default_factory=lambda: [])
+    sse: Literal["AES256", "aws:kms", "aws:kms:dsse"] = DEFAULT_SSE
+    sseKmsKeyId: str = DEFAULT_SSE_KMS_KEY_ID
     subnets: list[str] = field(default_factory=lambda: [])
     taskRoleArn: str = f"arn:aws:iam::{CURRENT_AWS_ACCOUNT}:role/ecsTaskExecutionRole"
 

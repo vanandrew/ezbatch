@@ -1,6 +1,10 @@
 from typing import Literal
 
-import pandas as pd
+from mypy_boto3_batch.type_defs import (
+    CreateComputeEnvironmentResponseTypeDef,
+    UpdateComputeEnvironmentResponseTypeDef,
+)
+from pandas import DataFrame
 
 from .client import BATCH_CLIENT, IAM_CLIENT
 from .conf import CONFIG
@@ -14,7 +18,7 @@ def create_compute_environment(
     subnets: list[str] = CONFIG.Settings.subnets,
     security_group_ids: list[str] = CONFIG.Settings.securityGroupIds,
     tags: dict[str, str] = {},
-):
+) -> CreateComputeEnvironmentResponseTypeDef:
     """Create a new compute environment.
 
     Parameters
@@ -33,13 +37,18 @@ def create_compute_environment(
         The security group IDs to use for the compute environment. Default is the security group IDs in the configuration.
     tags : dict[str, str]
         The tags to apply to the compute environment.
+
+    Returns
+    -------
+    ComputeEnvironmentDetailTypeDef
+        The response from the AWS Batch API.
     """
     # check that the service role exists
     if "Role" not in IAM_CLIENT.get_role(RoleName=service_role.split("/")[-1]):
         raise ValueError(f"Service role {service_role} does not exist.")
 
     # create the compute environment
-    BATCH_CLIENT.create_compute_environment(
+    return BATCH_CLIENT.create_compute_environment(
         computeEnvironmentName=name,
         type="MANAGED",
         state="ENABLED",
@@ -52,20 +61,25 @@ def create_compute_environment(
             "tags": tags,
         },
     )
-    print(f"Compute environment {name} created.")
 
 
-def list_compute_environments():
-    """List all compute environments."""
+def list_compute_environments() -> DataFrame:
+    """List all compute environments.
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame containing the compute environments.
+    """
     table_dict = {
         "Name": [],
-        # "ARN": [],
+        "ARN": [],
         "State": [],
         "Type": [],
         "Max vCPUs": [],
-        # "Subnets": [],
-        # "Security Group IDs": [],
-        # "Tags": [],
+        "Subnets": [],
+        "Security Group IDs": [],
+        "Tags": [],
     }
     compute_environments = BATCH_CLIENT.describe_compute_environments()
     for compute_environment in compute_environments["computeEnvironments"]:
@@ -79,23 +93,32 @@ def list_compute_environments():
         if "tags" not in compute_environment:
             continue
         table_dict["Name"].append(compute_environment["computeEnvironmentName"])
-        # table_dict["ARN"].append(compute_environment["computeEnvironmentArn"])
+        table_dict["ARN"].append(compute_environment["computeEnvironmentArn"])
         table_dict["State"].append(compute_environment["state"])
         table_dict["Type"].append(compute_environment["computeResources"]["type"])
         table_dict["Max vCPUs"].append(compute_environment["computeResources"]["maxvCpus"])
-        # table_dict["Subnets"].append(compute_environment["computeResources"]["subnets"])
-        # table_dict["Security Group IDs"].append(compute_environment["computeResources"]["securityGroupIds"])
-        # table_dict["Tags"].append(compute_environment["tags"])
-    print(pd.DataFrame(table_dict).to_markdown(index=False))
+        table_dict["Subnets"].append(compute_environment["computeResources"]["subnets"])
+        table_dict["Security Group IDs"].append(compute_environment["computeResources"]["securityGroupIds"])
+        table_dict["Tags"].append(compute_environment["tags"])
+    return DataFrame(table_dict)
 
 
-def toggle_compute_environment(name: str):
+def toggle_compute_environment(
+    name: str,
+) -> tuple[UpdateComputeEnvironmentResponseTypeDef, Literal["ENABLED", "DISABLED"]]:
     """Toggle the state of a compute environment.
 
     Parameters
     ----------
     name : str
         The name or ARN of the compute environment to toggle
+
+    Returns
+    -------
+    UpdateComputeEnvironmentResponseTypeDef
+        The response from the AWS Batch API.
+    Literal["ENABLED", "DISABLED"]
+        The new state of the compute environment.
     """
     # get the current state
     compute_environments = BATCH_CLIENT.describe_compute_environments(computeEnvironments=[name])
@@ -106,8 +129,7 @@ def toggle_compute_environment(name: str):
     if "state" not in compute_environments["computeEnvironments"][0]:
         raise ValueError(f"State of compute environment {name} is not available.")
     state = "ENABLED" if compute_environments["computeEnvironments"][0]["state"] == "DISABLED" else "DISABLED"
-    BATCH_CLIENT.update_compute_environment(computeEnvironment=name, state=state)
-    print(f"Compute environment {name} is now {state}")
+    return BATCH_CLIENT.update_compute_environment(computeEnvironment=name, state=state), state
 
 
 def delete_compute_environment(name: str):
@@ -119,4 +141,3 @@ def delete_compute_environment(name: str):
         The name or ARN of the compute environment to delete
     """
     BATCH_CLIENT.delete_compute_environment(computeEnvironment=name)
-    print(f"Compute environment {name} deleted.")

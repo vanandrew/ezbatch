@@ -8,6 +8,9 @@ from ezbatch.compute_environment import (
     list_compute_environments,
     toggle_compute_environment,
 )
+from ezbatch.interactive.manager import EZBatchManager
+from ezbatch.job import list_jobs, submit_job
+from ezbatch.job_definition import create_job_definition
 from ezbatch.job_queue import (
     create_job_queue,
     delete_job_queue,
@@ -86,6 +89,31 @@ def ezbatch_cli():
     jq_delete = job_queue_subcommands.add_parser("delete", help="Delete a Job Queue")
     jq_delete.add_argument("--name", type=str, required=True, help="The name or ARN of the Job Queue")
 
+    """job definition command"""
+    job_definition_command = subparsers.add_parser("job-definition", help="Job Definition Management")
+    job_definition_subcommands = job_definition_command.add_subparsers(dest="subcommand", help="Subcommands")
+
+    # create job definition
+    jd_create = job_definition_subcommands.add_parser("create", help="Create a new Job Definition")
+    jd_create.add_argument("--name", type=str, required=True, help="The name of the Job Definition")
+
+    """jobs command"""
+    jobs_command = subparsers.add_parser("jobs", help="Job Management")
+    jobs_subcommands = jobs_command.add_subparsers(dest="subcommand", help="Subcommands")
+
+    # submit job
+    jobs_submit = jobs_subcommands.add_parser("submit", help="Submit a job to the queue")
+    jobs_submit.add_argument("--name", type=str, required=True, help="The name of the job")
+    jobs_submit.add_argument("--queue", type=str, required=True, help="The name or ARN of the job queue")
+    jobs_submit.add_argument("--definition", type=str, required=True, help="The job definition to use")
+
+    # list jobs
+    jobs_list = jobs_subcommands.add_parser("list", help="List all jobs in the queue")
+    jobs_list.add_argument("--queue", type=str, required=True, help="The name or ARN of the job queue")
+
+    """interactive command"""
+    subparsers.add_parser("interactive", help="Interactive Mode")
+
     # parse the arguments
     args = parser.parse_args()
 
@@ -95,22 +123,41 @@ def ezbatch_cli():
             args_dict = vars(args)
             args_dict["tags"] = {tag.split("=")[0]: tag.split("=")[1] for tag in args_dict["tags"]}
             args_dict = sanitize_args(args_dict)
-            create_compute_environment(**args_dict)
+            response = create_compute_environment(**args_dict)
+            print(f"Compute environment {response['computeEnvironmentName']} created.")
         elif args.subcommand == "list":
-            list_compute_environments()
+            df = list_compute_environments()
+            print(df[["Name", "State", "Type", "Max vCPUs"]].to_markdown(index=False))
         elif args.subcommand == "toggle":
-            toggle_compute_environment(args.name)
+            response, state = toggle_compute_environment(args.name)
+            print(f"Compute environment {response['computeEnvironmentName']} is now {state}")
         elif args.subcommand == "delete":
             delete_compute_environment(args.name)
+            print(f"Compute environment {args.name} deleted.")
     elif args.command == "job-queue":
         if args.subcommand == "create":
             args_dict = vars(args)
             args_dict["tags"] = {tag.split("=")[0]: tag.split("=")[1] for tag in args_dict["tags"]}
             args_dict = sanitize_args(args_dict)
-            create_job_queue(**args_dict)
+            response = create_job_queue(**args_dict)
+            print(f"Job queue {response['jobQueueName']} created.")
         elif args.subcommand == "list":
-            list_job_queues()
+            df = list_job_queues()
+            print(df[["Name", "State", "Status", "Status Reason", "Compute Environment"]].to_markdown(index=False))
         elif args.subcommand == "toggle":
-            toggle_job_queue(args.name)
+            response, state = toggle_job_queue(args.name)
+            print(f"Job queue {response['jobQueueName']} is now {state}")
         elif args.subcommand == "delete":
             delete_job_queue(args.name)
+            print(f"Job queue {args.name} deleted.")
+    elif args.command == "jobs":
+        if args.subcommand == "submit":
+            args_dict = vars(args)
+            args_dict = sanitize_args(args_dict)
+            response = submit_job(**args_dict)
+            print(f"Job {response['jobName']} submitted to queue {args.queue} with definition {args.definition}")
+        elif args.subcommand == "list":
+            list_jobs(args.queue)
+    elif args.command == "interactive":
+        app = EZBatchManager()
+        app.run()
