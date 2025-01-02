@@ -69,6 +69,7 @@ def list_jobs(
         "JobId": [],
         "TaskId": [],
         "Status": [],
+        "Tags": [],
     }
     for job in BATCH_CLIENT.list_jobs(jobQueue=queue, jobStatus=status)["jobSummaryList"]:
         if "status" not in job:
@@ -82,12 +83,16 @@ def list_jobs(
                 continue
             if "taskArn" not in job_desp["ecsProperties"]["taskProperties"][0]:
                 continue
+            if "tags" not in job_desp:
+                tags = {}
+            else:
+                tags = job_desp["tags"]
             task_arn = job_desp["ecsProperties"]["taskProperties"][0]["taskArn"]
             task_id = task_arn.split("/")[-1]
             job_list["Name"].append(job["jobName"])
             job_list["JobId"].append(job["jobId"])
             job_list["TaskId"].append(task_id)
             job_list["Status"].append(job["status"])
+            job_list["Tags"].append(tags)
     job_df = DataFrame(job_list)
-    print(job_df.to_markdown(index=False))
     return job_df

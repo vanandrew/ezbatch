@@ -70,6 +70,10 @@ class EZBatchJob(DataClassJsonMixin):
         The platform to run the job on.
     tags : dict[str, str]
         The tags to associate with the job.
+    preloader : bool
+        Whether to preload the job with the EZBatch preloader script. This script will allow you to use the
+        mounts variable to download/upload S3 data to the running container. If False, it's up to the user to
+        manage s3 downloads/uploads. By default, this is False.
     """
 
     image: str
@@ -80,6 +84,7 @@ class EZBatchJob(DataClassJsonMixin):
     memory: int = 2048
     platform: Literal["FARGATE", "EC2"] = "FARGATE"
     tags: dict[str, str] = field(default_factory=dict)
+    preloader: bool = False
 
     # internal variables
     _job_name: str = ""
@@ -97,15 +102,20 @@ class EZBatchJob(DataClassJsonMixin):
         EZBatchJobDefinition
             The job definition.
         """
-        # store command in EZBATCH_COMMAND environment variable
-        self.environment["EZBATCH_COMMAND"] = self.command
-        # add mounts to environment
-        self.environment["EZBATCH_S3_MOUNTS"] = self.mounts.to_json()
+        # if preloader is True, setup preloader execution
+        if self.preloader:
+            # store command in EZBATCH_COMMAND environment variable
+            self.environment["EZBATCH_COMMAND"] = self.command
+            # add mounts to environment
+            self.environment["EZBATCH_S3_MOUNTS"] = self.mounts.to_json()
+            command = PRELOAD_COMMAND
+        else:  # just use the command as is
+            command = self.command.split(" ")
         return {
             "job_name": self._job_name,
             "container_name": sanitize_name(self.image.split("/")[-1]),
             "image": self.image,
-            "command": PRELOAD_COMMAND,
+            "command": command,
             "environment": self.environment,
             "vcpus": self.vcpus,
             "memory": self.memory,

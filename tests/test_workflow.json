@@ -1,0 +1,33 @@
+{
+    "name": "test-workflow",
+    "jobs": {
+        "job1": {
+            "image": "public.ecr.aws/ubuntu/ubuntu:22.04",
+            "command": "echo hello, world!; ls -l /mnt/CIT168; sleep 18000;",
+            "environment": {
+                "TEST": "test"
+            },
+            "mounts": {
+                "read": [
+                    {
+                        "source": "s3://research-turing-development-datasets/references/atlas/CIT168",
+                        "destination": "/mnt/CIT168",
+                        "options": "--recursive"
+                    }
+                ],
+                "write": [
+                    {
+                        "source": "/mnt/CIT168",
+                        "destination": "s3://research-turing-scratch/avan/CIT168",
+                        "options": "--recursive --sse aws:kms --sse-kms-key-id mrk-4eeeb45de27844f1bbcc077472b28d97"
+                    }
+                ]
+            },
+            "vcpus": 1,
+            "memory": 2048,
+            "platform": "FARGATE",
+            "tags": {}
+        }
+    },
+    "dependencies": {}
+}
