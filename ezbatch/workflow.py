@@ -66,6 +66,8 @@ class EZBatchJob(DataClassJsonMixin):
         The number of vCPUs to allocate for the job.
     memory : int
         The amount of memory to allocate for the job.
+    storage_size : int
+        The amount of storage to allocate for the job.
     platform : Literal["FARGATE", "EC2"]
         The platform to run the job on.
     tags : dict[str, str]
@@ -82,6 +84,7 @@ class EZBatchJob(DataClassJsonMixin):
     mounts: S3Mounts = field(default_factory=S3Mounts)
     vcpus: int = 1
     memory: int = 2048
+    storage_size: int = 30
     platform: Literal["FARGATE", "EC2"] = "FARGATE"
     tags: dict[str, str] = field(default_factory=dict)
     preloader: bool = False
@@ -119,6 +122,7 @@ class EZBatchJob(DataClassJsonMixin):
             "environment": self.environment,
             "vcpus": self.vcpus,
             "memory": self.memory,
+            "storage_size": self.storage_size,
             "platform": self.platform,
             "tags": self.tags,
         }
@@ -168,8 +172,12 @@ class EZBatchWorkflow(DataClassJsonMixin):
         # create job queue
         job_queue = []
 
+        # number of iterations
+        num_iter = 0
+
         # loop until all jobs are in the queue
         while len(job_queue) != len(jobs):
+            
             # loop over dependency map
             for job_name in jobs:
                 # if job is already in queue, skip
@@ -182,6 +190,13 @@ class EZBatchWorkflow(DataClassJsonMixin):
                 # if all of job's dependencies are in queue, add job to queue
                 if all(dep in job_queue for dep in dependency_map[job_name]):
                     job_queue.append(job_name)
+
+            # increment number of iterations
+            num_iter += 1
+
+            # if number of iterations is greater than 100, raise error
+            if num_iter > 100:
+                raise ValueError("Dependency loop detected.")
 
         # return job queue
         return job_queue

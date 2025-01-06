@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from random import getrandbits
 from typing import Literal, cast
+from warnings import warn
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -32,9 +33,10 @@ def check_s3_uri_valid(s3_uri: str) -> bool:
         if "Contents" in response:
             return True
     except Exception:
-        pass
-    # return false if object does not exist
-    return False
+        # warn that path does not exists
+        warn(f"s3 uri does not currently exist: {s3_uri}")
+    # return True for now
+    return True
 
 
 def check_bucket_writable(

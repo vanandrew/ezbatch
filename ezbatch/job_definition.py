@@ -145,6 +145,7 @@ def create_ezbatch_job_definition(
     environment: dict[str, str] = {},
     vcpus: int = 1,
     memory: int = 2048,
+    storage_size: int = 30,
     platform: Literal["FARGATE", "EC2"] = "FARGATE",
     tags: dict[str, str] = {},
 ) -> RegisterJobDefinitionResponseTypeDef:
@@ -166,6 +167,8 @@ def create_ezbatch_job_definition(
         The number of vCPUs to allocate to the container, by default 1
     memory : int, optional
         The amount of memory to allocate to the container, by default 2048
+    storage_size : int, optional
+        The amount of storage to allocate to the container, by default 30
     platform : Literal["FARGATE", "EC2"], optional
         The platform capabilities, by default "FARGATE".
     tags : dict[str, str], optional
@@ -188,6 +191,7 @@ def create_ezbatch_job_definition(
         ecs_properties=ECSProperties(
             taskProperties=[
                 TaskProperty(
+                    ephemeralStorage=EphemeralStorageProperty(sizeInGiB=storage_size),
                     containers=[
                         Container(
                             name=container_name,
