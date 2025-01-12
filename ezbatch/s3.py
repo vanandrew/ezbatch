@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from random import getrandbits
-from typing import Literal, cast
+from typing import Literal, Sequence, cast, TypedDict
 from warnings import warn
+import json
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -90,7 +91,19 @@ class S3Mount(DataClassJsonMixin):
 
     source: str
     destination: str
+    recursive: bool | None = None
+    sse: str | None = None
+    sse_kms_key_id: str | None = None
     options: str = ""
+
+    def __post_init__(self):
+        """Post-initialization."""
+        if self.recursive is not None:
+            self.options += f" --recursive"
+        if self.sse is not None:
+            self.options += f" --sse {self.sse}"
+        if self.sse_kms_key_id is not None:
+            self.options += f" --sse-kms-key-id {self.sse_kms_key_id}"
 
     def validate(self):
         """Validate the S3 mount."""
@@ -116,12 +129,33 @@ class S3Mount(DataClassJsonMixin):
 class S3Mounts(DataClassJsonMixin):
     """S3 mounts for a job."""
 
-    read: list[S3Mount] = field(default_factory=list)
-    write: list[S3Mount] = field(default_factory=list)
+    read: Sequence[S3Mount | dict] = field(default_factory=list)
+    write: Sequence[S3Mount | dict] = field(default_factory=list)
+
+    def __post_init__(self):
+        """Post-initialization."""
+        self.read = [S3Mount(**mount) if isinstance(mount, dict) else mount for mount in self.read]
+        self.write = [S3Mount(**mount) if isinstance(mount, dict) else mount for mount in self.write]
 
     def validate(self):
         """Validate the S3 mounts."""
         for mount in self.read:
-            mount.validate()
+            mount.validate()  # type: ignore
         for mount in self.write:
-            mount.validate()
+            mount.validate()  # type: ignore
+
+    def to_json(self, *args, **kwargs):
+        """Convert to JSON."""
+        json_string = super().to_json(*args, **kwargs)
+        data_dict = json.loads(json_string)
+        # loop through entries and delete anything except source, destination, and options
+        nonnull_read = [
+            {key: value for key, value in entry.items() if key == "source" or key == "destination" or key == "options"}
+            for entry in data_dict["read"]
+        ]
+        nonnull_write = [
+            {key: value for key, value in entry.items() if key == "source" or key == "destination" or key == "options"} for entry in data_dict["write"]
+        ]
+        data_dict["read"] = nonnull_read
+        data_dict["write"] = nonnull_write
+        return json.dumps(data_dict)

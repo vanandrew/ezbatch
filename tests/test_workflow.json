@@ -12,21 +12,29 @@
                     {
                         "source": "s3://research-turing-development-datasets/references/atlas/CIT168",
                         "destination": "/mnt/CIT168",
-                        "options": "--recursive"
+                        "recursive": true,
+                        "sse": null,
+                        "sse_kms_key_id": null,
+                        "options": " --recursive"
                     }
                 ],
                 "write": [
                     {
                         "source": "/mnt/CIT168",
                         "destination": "s3://research-turing-scratch/avan/CIT168",
-                        "options": "--recursive --sse aws:kms --sse-kms-key-id mrk-4eeeb45de27844f1bbcc077472b28d97"
+                        "recursive": true,
+                        "sse": "aws:kms",
+                        "sse_kms_key_id": "mrk-4eeeb45de27844f1bbcc077472b28d97",
+                        "options": " --recursive --sse aws:kms --sse-kms-key-id mrk-4eeeb45de27844f1bbcc077472b28d97"
                     }
                 ]
             },
             "vcpus": 1,
             "memory": 2048,
+            "storage_size": 30,
             "platform": "FARGATE",
-            "tags": {}
+            "tags": {},
+            "preloader": true
         }
     },
     "dependencies": {}

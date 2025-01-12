@@ -26,6 +26,7 @@ class EZBatchJobDefinition(TypedDict):
     environment: dict[str, str]
     vcpus: int
     memory: int
+    storage_size: int
     platform: Literal["FARGATE", "EC2"]
     tags: dict[str, str]
 

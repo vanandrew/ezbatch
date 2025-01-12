@@ -13,20 +13,23 @@ def test_workflow():
                 environment={"TEST": "test"},
                 mounts=S3Mounts(
                     read=[
-                        S3Mount(
-                            source="s3://research-turing-development-datasets/references/atlas/CIT168",
-                            destination="/mnt/CIT168",
-                            options="--recursive",
-                        ),
+                        {
+                            "source": "s3://research-turing-development-datasets/references/atlas/CIT168",
+                            "destination": "/mnt/CIT168",
+                            "recursive": True,
+                        }
                     ],
                     write=[
-                        S3Mount(
-                            source="/mnt/CIT168",
-                            destination="s3://research-turing-scratch/avan/CIT168",
-                            options="--recursive --sse aws:kms --sse-kms-key-id mrk-4eeeb45de27844f1bbcc077472b28d97",
-                        ),
+                        {
+                            "source": "/mnt/CIT168",
+                            "destination": "s3://research-turing-scratch/avan/CIT168",
+                            "recursive": True,
+                            "sse": "aws:kms",
+                            "sse_kms_key_id": "mrk-4eeeb45de27844f1bbcc077472b28d97",
+                        }
                     ],
                 ),
+                preloader=True,
             ),
         },
     )
