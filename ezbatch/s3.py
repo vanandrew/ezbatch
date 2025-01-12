@@ -94,7 +94,7 @@ class S3Mount(DataClassJsonMixin):
     recursive: bool | None = None
     sse: str | None = None
     sse_kms_key_id: str | None = None
-    options: str = ""
+    options: str = "--quiet"
 
     def __post_init__(self):
         """Post-initialization."""

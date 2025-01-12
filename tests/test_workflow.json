@@ -3,7 +3,7 @@
     "jobs": {
         "job1": {
             "image": "public.ecr.aws/ubuntu/ubuntu:22.04",
-            "command": "echo hello, world!; ls -l /mnt/CIT168; sleep 18000;",
+            "command": "echo hello, world!; ls -l /mnt/CIT168;",
             "environment": {
                 "TEST": "test"
             },
@@ -15,7 +15,7 @@
                         "recursive": true,
                         "sse": null,
                         "sse_kms_key_id": null,
-                        "options": " --recursive"
+                        "options": "--quiet --recursive"
                     }
                 ],
                 "write": [
@@ -25,7 +25,7 @@
                         "recursive": true,
                         "sse": "aws:kms",
                         "sse_kms_key_id": "mrk-4eeeb45de27844f1bbcc077472b28d97",
-                        "options": " --recursive --sse aws:kms --sse-kms-key-id mrk-4eeeb45de27844f1bbcc077472b28d97"
+                        "options": "--quiet --recursive --sse aws:kms --sse-kms-key-id mrk-4eeeb45de27844f1bbcc077472b28d97"
                     }
                 ]
             },

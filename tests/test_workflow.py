@@ -9,7 +9,7 @@ def test_workflow():
         jobs={
             "job1": EZBatchJob(
                 image="public.ecr.aws/ubuntu/ubuntu:22.04",
-                command="echo hello, world!; ls -l /mnt/CIT168; sleep 18000;",
+                command="echo hello, world!; ls -l /mnt/CIT168;",
                 environment={"TEST": "test"},
                 mounts=S3Mounts(
                     read=[
