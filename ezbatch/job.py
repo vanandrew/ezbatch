@@ -71,7 +71,7 @@ def list_jobs(
         "Status": [],
         "Tags": [],
     }
-    for job in BATCH_CLIENT.list_jobs(jobQueue=queue, jobStatus=status)["jobSummaryList"]:
+    for job in BATCH_CLIENT.list_jobs(jobQueue=queue, jobStatus=status, maxResults=10)["jobSummaryList"]:
         if "status" not in job:
             continue
         # get taskID
