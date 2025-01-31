@@ -7,7 +7,7 @@ license = { file = "LICENSE" }
 dynamic = ["version"]
 dependencies = [
     "boto3",
-    "boto3-stubs[essential,batch,iam]",
+    "boto3-stubs[full]",
     "dataclasses-json",
     "pandas",
     "random_word",
@@ -24,6 +24,9 @@ dev = [
     "pre-commit",
     "pytest",
     "textual-dev",
+    "sphinx",
+    "myst-parser",
+    "pydata-sphinx-theme",
 ]
 
 [tool.setuptools.packages.find]
