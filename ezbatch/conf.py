@@ -40,6 +40,7 @@ class EZBatchSettings(DataClassJsonMixin):
     serviceRole: str = (
         f"arn:aws:iam::{CURRENT_AWS_ACCOUNT}:role/aws-service-role/batch.amazonaws.com/AWSServiceRoleForBatch"
     )
+    instanceRole: str = f"arn:aws:iam::{CURRENT_AWS_ACCOUNT}:role/ecsInstanceRole"
     securityGroupIds: list[str] = field(default_factory=lambda: [])
     sse: Literal["AES256", "aws:kms", "aws:kms:dsse"] = DEFAULT_SSE
     sseKmsKeyId: str = DEFAULT_SSE_KMS_KEY_ID

@@ -1,3 +1,4 @@
+import re
 from typing import Literal
 
 from mypy_boto3_batch.type_defs import (
@@ -13,6 +14,7 @@ from .conf import CONFIG
 def create_compute_environment(
     name: str,
     service_role: str = CONFIG.Settings.serviceRole,
+    instance_role: str = CONFIG.Settings.instanceRole,
     type: Literal["FARGATE", "EC2"] = "FARGATE",
     max_vcpus: int = CONFIG.Settings.maxvCpus,
     subnets: list[str] = CONFIG.Settings.subnets,
@@ -27,6 +29,8 @@ def create_compute_environment(
         The name of the compute environment.
     service_role : str, optional
         The service role to use for the compute environment. Default is the service role in the configuration
+    instance_role : str, optional
+        The instance role to use for the compute environment. Default is the instance role in the configuration
     type : Literal["FARGATE", "EC2"], optional
         The type of compute environment to create. Default is "FARGATE".
     max_vcpus : int, optional
@@ -47,20 +51,42 @@ def create_compute_environment(
     if "Role" not in IAM_CLIENT.get_role(RoleName=service_role.split("/")[-1]):
         raise ValueError(f"Service role {service_role} does not exist.")
 
-    # create the compute environment
-    return BATCH_CLIENT.create_compute_environment(
-        computeEnvironmentName=name,
-        type="MANAGED",
-        state="ENABLED",
-        serviceRole=service_role,
-        computeResources={
-            "type": type,
-            "maxvCpus": max_vcpus,
-            "subnets": subnets,
-            "securityGroupIds": security_group_ids,
-            "tags": tags,
-        },
-    )
+    if type == "FARGATE":
+        # create the compute environment
+        return BATCH_CLIENT.create_compute_environment(
+            computeEnvironmentName=name,
+            type="MANAGED",
+            state="ENABLED",
+            serviceRole=service_role,
+            computeResources={
+                "type": type,
+                "maxvCpus": max_vcpus,
+                "subnets": subnets,
+                "securityGroupIds": security_group_ids,
+                "tags": tags,
+            },
+        )
+    elif type == "EC2":
+        return BATCH_CLIENT.create_compute_environment(
+            computeEnvironmentName=name,
+            type="MANAGED",
+            state="ENABLED",
+            serviceRole=service_role,
+            computeResources={
+                "type": type,
+                "instanceTypes": ["optimal"],
+                "minvCpus": 0,
+                "desiredvCpus": 0,
+                "maxvCpus": max_vcpus,
+                "allocationStrategy": "BEST_FIT_PROGRESSIVE",
+                "instanceRole": instance_role,
+                "subnets": subnets,
+                "securityGroupIds": security_group_ids,
+                "tags": tags,
+            },
+        )
+    else:
+        raise ValueError(f"Invalid type {type}.")
 
 
 def list_compute_environments() -> DataFrame:
