@@ -145,7 +145,7 @@ def create_ezbatch_job_definition(
     environment: dict[str, str] = {},
     vcpus: int = 1,
     memory: int = 2048,
-    storage_size: int = 30,
+    storage_size: int | None = None,
     platform: Literal["FARGATE", "EC2"] = "FARGATE",
     tags: dict[str, str] = {},
 ) -> RegisterJobDefinitionResponseTypeDef:
@@ -168,7 +168,7 @@ def create_ezbatch_job_definition(
     memory : int, optional
         The amount of memory to allocate to the container, by default 2048
     storage_size : int, optional
-        The amount of storage to allocate to the container, by default 30
+        The amount of storage to allocate to the container, by default None
     platform : Literal["FARGATE", "EC2"], optional
         The platform capabilities, by default "FARGATE".
     tags : dict[str, str], optional
@@ -185,28 +185,37 @@ def create_ezbatch_job_definition(
     # format resource requirements
     resource_requirements = [VCpuRequirement(value=str(vcpus)), MemoryRequirement(value=str(memory))]
 
+    # create ecs_properties
+    ecs_properties: EcsPropertiesTypeDef = {
+        "taskProperties": [
+            {  # type: ignore
+                "containers": [
+                    {
+                        "name": container_name,
+                        "command": command,
+                        "image": image,
+                        "environment": environment_field,
+                        "resourceRequirements": resource_requirements,
+                    }
+                ],
+            }
+        ]
+    }
+
+    # add storage size if provided
+    if storage_size is not None:
+        ecs_properties["taskProperties"][0]["ephemeralStorage"] = {"sizeInGiB": storage_size}  # type: ignore
+
     # create the job definition
-    return create_job_definition(
+    job_definition = create_job_definition(
         name=job_name,
-        ecs_properties=ECSProperties(
-            taskProperties=[
-                TaskProperty(
-                    ephemeralStorage=EphemeralStorageProperty(sizeInGiB=storage_size),
-                    containers=[
-                        Container(
-                            name=container_name,
-                            command=command,
-                            image=image,
-                            environment=environment_field,
-                            resourceRequirements=resource_requirements,
-                        )
-                    ]
-                )
-            ]
-        ),
+        ecs_properties=ecs_properties,
         platform=platform,
         tags=tags,
     )
+
+    # return the job definition
+    return job_definition
 
 
 def deregister_job_definition(job_definition: str) -> None:

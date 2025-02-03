@@ -67,8 +67,8 @@ class EZBatchJob(DataClassJsonMixin):
         The number of vCPUs to allocate for the job.
     memory : int
         The amount of memory to allocate for the job.
-    storage_size : int
-        The amount of storage to allocate for the job.
+    storage_size : int, optional
+        The amount of storage to allocate for the job, by default None.
     platform : Literal["FARGATE", "EC2"]
         The platform to run the job on.
     tags : dict[str, str]
@@ -85,7 +85,7 @@ class EZBatchJob(DataClassJsonMixin):
     mounts: S3Mounts = field(default_factory=S3Mounts)
     vcpus: int = 1
     memory: int = 2048
-    storage_size: int = 30
+    storage_size: int | None = None
     platform: Literal["FARGATE", "EC2"] = "FARGATE"
     tags: dict[str, str] = field(default_factory=dict)
     preloader: bool = False
@@ -115,7 +115,7 @@ class EZBatchJob(DataClassJsonMixin):
             command = PRELOAD_COMMAND
         else:  # just use the command as is
             command = self.command.split(" ")
-        return {
+        ezbatch_job_definition = {
             "job_name": self._job_name,
             "container_name": sanitize_name(self.image.split("/")[-1]),
             "image": self.image,
@@ -123,10 +123,12 @@ class EZBatchJob(DataClassJsonMixin):
             "environment": self.environment,
             "vcpus": self.vcpus,
             "memory": self.memory,
-            "storage_size": self.storage_size,
             "platform": self.platform,
             "tags": self.tags,
         }
+        if self.storage_size is not None:
+            ezbatch_job_definition["storage_size"] = self.storage_size
+        return ezbatch_job_definition  # type: ignore
 
 
 @dataclass
@@ -178,7 +180,7 @@ class EZBatchWorkflow(DataClassJsonMixin):
 
         # loop until all jobs are in the queue
         while len(job_queue) != len(jobs):
-            
+
             # loop over dependency map
             for job_name in jobs:
                 # if job is already in queue, skip
