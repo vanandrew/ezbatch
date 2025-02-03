@@ -180,10 +180,15 @@ def create_ezbatch_job_definition(
         The response from the register job definition operation
     """
     # format environment
-    environment_field = [EnvironmentProperty(name=str(key), value=str(value)) for key, value in environment.items()]
+    environment_field = [
+        EnvironmentProperty(name=str(key), value=str(value)).to_dict() for key, value in environment.items()
+    ]
 
     # format resource requirements
-    resource_requirements = [VCpuRequirement(value=str(vcpus)), MemoryRequirement(value=str(memory))]
+    resource_requirements = [
+        VCpuRequirement(value=str(vcpus)).to_dict(),
+        MemoryRequirement(value=str(memory)).to_dict(),
+    ]
 
     # create ecs_properties
     ecs_properties: EcsPropertiesTypeDef = {
