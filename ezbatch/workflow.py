@@ -3,7 +3,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, cast
 
 from dataclasses_json import DataClassJsonMixin
 from random_word import RandomWords
@@ -73,6 +73,9 @@ class EZBatchJob(DataClassJsonMixin):
         The platform to run the job on.
     tags : dict[str, str]
         The tags to associate with the job.
+    queue: str | None
+        The name or ARN of the job queue to submit the job to. Overrides the workflow
+        level queue if provided.
     preloader : bool
         Whether to preload the job with the EZBatch preloader script. This script will allow you to use the
         mounts variable to download/upload S3 data to the running container. If False, it's up to the user to
@@ -88,6 +91,7 @@ class EZBatchJob(DataClassJsonMixin):
     storage_size: int | None = None
     platform: Literal["FARGATE", "EC2"] = "FARGATE"
     tags: dict[str, str] = field(default_factory=dict)
+    queue: str | None = None
     preloader: bool = False
 
     # internal variables
@@ -204,12 +208,12 @@ class EZBatchWorkflow(DataClassJsonMixin):
         # return job queue
         return job_queue
 
-    def submit(self, queue: str):
+    def submit(self, queue: str | None = None):
         """Submit the workflow to AWS Batch.
 
         Parameters
         ----------
-        queue : str
+        queue : str | None
             The name or ARN of the job queue to submit the workflow to.
         """
         try:
@@ -255,10 +259,16 @@ class EZBatchWorkflow(DataClassJsonMixin):
                 print(f"Submitting job: {job}")
                 # get the job dependencies
                 depends_on = self._job_dependency_map.get(job, [])
+                # get ezbatch job object
+                ezbatch_job = self._job_map[job]
+                # raise error if both queue and ezbatch_job.queue are None
+                if queue is None and ezbatch_job.queue is None:
+                    raise ValueError("Queue must be provided at the workflow or job level.")
+                queue = cast(str, queue)
                 # submit the job
                 response = submit_job(
                     name=job,
-                    queue=queue,
+                    queue=queue if ezbatch_job.queue is None else ezbatch_job.queue,
                     definition=self._job_def_map[job],
                     depends_on=[{"jobId": self._job_id_map[d]} for d in depends_on],
                     tags=self._job_map[job].tags,

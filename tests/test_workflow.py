@@ -29,9 +29,37 @@ def test_workflow():
                         }
                     ],
                 ),
+                platform="EC2",
                 preloader=True,
+                queue="EC2-4vCPU-30GB",
+            ),
+            "job2": EZBatchJob(
+                image="public.ecr.aws/ubuntu/ubuntu:22.04",
+                command="echo hello, world!; ls -l /mnt/CIT168;",
+                environment={"TEST": "test"},
+                mounts=S3Mounts(
+                    read=[
+                        {
+                            "source": "s3://research-turing-development-datasets/references/atlas/CIT168",
+                            "destination": "/mnt/CIT168",
+                            "recursive": True,
+                        }
+                    ],
+                    write=[
+                        {
+                            "source": "/mnt/CIT168",
+                            "destination": "s3://research-turing-scratch/avan/CIT168",
+                            "recursive": True,
+                            "sse": "aws:kms",
+                            "sse_kms_key_id": "mrk-4eeeb45de27844f1bbcc077472b28d97",
+                        }
+                    ],
+                ),
+                platform="EC2",
+                preloader=True,
+                queue="EC2-8vCPU-61GB",
             ),
         },
+        dependencies={"job2": ["job1"]},
     )
-    workflow.submit(queue="DefaultFargateQueue")
-    workflow.save("tests/test_workflow.json")
+    workflow.submit()
