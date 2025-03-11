@@ -179,37 +179,68 @@ def create_ezbatch_job_definition(
     RegisterJobDefinitionResponseTypeDef
         The response from the register job definition operation
     """
-    # format environment
-    environment_field = [
-        EnvironmentProperty(name=str(key), value=str(value)).to_dict() for key, value in environment.items()
-    ]
-
-    # format resource requirements
-    resource_requirements = [
-        VCpuRequirement(value=str(vcpus)).to_dict(),
-        MemoryRequirement(value=str(memory)).to_dict(),
-    ]
-
-    # create ecs_properties
-    ecs_properties: EcsPropertiesTypeDef = {
-        "taskProperties": [
-            {  # type: ignore
-                "containers": [
-                    {
-                        "name": container_name,
-                        "command": command,
-                        "image": image,
-                        "environment": environment_field,
-                        "resourceRequirements": resource_requirements,
-                    }
-                ],
-            }
+    if platform == "FARGATE":
+        # create ecs_properties
+        ecs_properties: ECSProperties = ECSProperties(  # type: ignore
+            taskProperties=[
+                TaskProperty(
+                    containers=[
+                        Container(
+                            name=container_name,
+                            command=command,
+                            image=image,
+                            environment=[
+                                EnvironmentProperty(name=str(key), value=str(value))
+                                for key, value in environment.items()
+                            ],
+                            resourceRequirements=[
+                                VCpuRequirement(value=str(vcpus)),
+                                MemoryRequirement(value=str(memory)),
+                            ],
+                        )
+                    ],
+                    ephemeralStorage=(
+                        EphemeralStorageProperty(sizeInGiB=storage_size)
+                        if storage_size is not None
+                        else EphemeralStorageProperty()
+                    ),
+                ),
+            ]
+        )
+    elif platform == "EC2":
+        # format environment
+        environment_field = [
+            EnvironmentProperty(name=str(key), value=str(value)).to_dict() for key, value in environment.items()
         ]
-    }
 
-    # add storage size if provided
-    if storage_size is not None:
-        ecs_properties["taskProperties"][0]["ephemeralStorage"] = {"sizeInGiB": storage_size}  # type: ignore
+        # format resource requirements
+        resource_requirements = [
+            VCpuRequirement(value=str(vcpus)).to_dict(),
+            MemoryRequirement(value=str(memory)).to_dict(),
+        ]
+
+        # create ecs_properties
+        ecs_properties: EcsPropertiesTypeDef = {
+            "taskProperties": [
+                {  # type: ignore
+                    "containers": [
+                        {
+                            "name": container_name,
+                            "command": command,
+                            "image": image,
+                            "environment": environment_field,
+                            "resourceRequirements": resource_requirements,
+                        }
+                    ],
+                }
+            ]
+        }
+
+        # add storage size if provided
+        if storage_size is not None:
+            ecs_properties["taskProperties"][0]["ephemeralStorage"] = {"sizeInGiB": storage_size}  # type: ignore
+    else:
+        raise ValueError(f"Invalid platform {platform}")
 
     # create the job definition
     job_definition = create_job_definition(
