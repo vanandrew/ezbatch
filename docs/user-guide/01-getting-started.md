@@ -100,5 +100,35 @@ a simple interface for setting up these resources (which you can then modify as 
 To create a compute environment, run the following command:
 
 ```bash
-ezbatch create-compute-environment
+# Create a compute environment
+ezbatch-cli create-compute-environment create --name [name_of_compute_environment] --type [EC2/Fargate] --maxvCpus [num_cpus]
+# Example
+ezbatch-cli create-compute-environment create --name my-compute-environment --type EC2 --maxvCpus 256
+```
+
+this will create a new compute environment with the specified name, type, and maximum number of vCPUs.
+
+You can check the status of all your compute environments by running:
+
+```bash
+# Check the status of all compute environments
+ezbatch-cli compute-environment list
+```
+
+Now you can create a job queue, that will use the compute environment you just created:
+
+```bash
+# Create a job queue
+ezbatch-cli job-queue create --name [name_of_job_queue] --compute-environment [name_of_compute_environment]
+# Example
+ezbatch-cli job-queue create --name my-job-queue --compute-environment my-compute-environment
+```
+
+Jobs will now be submittable to the job queue you just created.
+
+You can check the status of all your job queues by running:
+
+```bash
+# Check the status all job queues
+ezbatch-cli job-queue list
 ```
