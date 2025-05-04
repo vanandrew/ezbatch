@@ -58,7 +58,7 @@ class EZBatchConfig(DataClassJsonMixin):
         The settings for EZBatch.
     """
 
-    Settings: EZBatchSettings = EZBatchSettings()
+    Settings: EZBatchSettings = field(default_factory=lambda: EZBatchSettings())
 
     @classmethod
     def load(cls, filename: Path | str):
