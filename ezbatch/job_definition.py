@@ -67,18 +67,18 @@ class Container(DataClassJsonMixin):
     resourceRequirements: list[VCpuRequirement | MemoryRequirement] = field(
         default_factory=lambda: [VCpuRequirement(), MemoryRequirement()]
     )
-    logConfiguration: LogConfigurationProperty = LogConfigurationProperty()
+    logConfiguration: LogConfigurationProperty = field(default_factory=lambda: LogConfigurationProperty())
 
 
 @dataclass
 class TaskProperty(DataClassJsonMixin):
     containers: list[Container]
-    ephemeralStorage: EphemeralStorageProperty = EphemeralStorageProperty()
+    ephemeralStorage: EphemeralStorageProperty = field(default_factory=lambda: EphemeralStorageProperty())
     executionRoleArn: str = CONFIG.Settings.executionRoleArn
     taskRoleArn: str = CONFIG.Settings.taskRoleArn
     platformVersion: str = "LATEST"
-    networkConfiguration: NetworkConfiguration = NetworkConfiguration()
-    runtimePlatform: RuntimePlatform = RuntimePlatform()
+    networkConfiguration: NetworkConfiguration = field(default_factory=lambda: NetworkConfiguration())
+    runtimePlatform: RuntimePlatform = field(default_factory=lambda: RuntimePlatform())
 
 
 @dataclass
