@@ -5,3 +5,8 @@ A Python Library for Simplified AWS Batch
 
 For documentation, see [https://ezbatch.readthedocs.io](https://ezbatch.readthedocs.io)
 
+## Installation
+
+```bash
+pip install ezbatch
+```
