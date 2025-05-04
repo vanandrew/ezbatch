@@ -1,8 +1,9 @@
+import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from random import getrandbits
-from typing import Literal, Sequence, cast, TypedDict
+from typing import Literal, TypedDict, cast
 from warnings import warn
-import json
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -154,7 +155,8 @@ class S3Mounts(DataClassJsonMixin):
             for entry in data_dict["read"]
         ]
         nonnull_write = [
-            {key: value for key, value in entry.items() if key == "source" or key == "destination" or key == "options"} for entry in data_dict["write"]
+            {key: value for key, value in entry.items() if key == "source" or key == "destination" or key == "options"}
+            for entry in data_dict["write"]
         ]
         data_dict["read"] = nonnull_read
         data_dict["write"] = nonnull_write
